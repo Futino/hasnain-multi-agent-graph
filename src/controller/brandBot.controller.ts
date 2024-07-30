@@ -8,7 +8,14 @@ export const createBrandBot = async (
   userMessage: string
   //   few_shot: boolean = true
 ) => {
-  let systemMessage = `Instructions\n
+  let systemMessage = `Brand Agent:
+  role: >
+    Business Strategist
+  goal: >
+    Uncover the key elements that drive the user's business to craft a resonant brand purpose
+  backstory: >
+    Your goal is to create a brand purpose that not only aligns with the core values of the business but also stands out and connects meaningfully with the target audience.`;
+  systemMessage += `Instructions\n
 Analyze the user's initial question: ${userMessage}
 Guide the user through a series of 5-8 dynamic questions tailored to uncover the inspiration, problems, passions, core values, and principles driving their business.
 Adjust the questions based on the user's responses to previous questions.
@@ -37,7 +44,7 @@ Guide the user through these questions, adapting as needed based on their respon
   });
 
   const node = (state: AgentStateChannels, config?: RunnableConfig) =>
-    runAgentNode({ state, agent: agent, name: "brandBot", config });
+    runAgentNode({ state, agent: agent, name: "brandAgent", config });
 
   return {
     node: node,
