@@ -4,13 +4,13 @@ import {
   MessagesPlaceholder,
 } from "@langchain/core/prompts";
 import { ChatOpenAI } from "@langchain/openai";
-
+import { z } from "zod";
 import { Runnable, type RunnableConfig } from "@langchain/core/runnables";
-import { AgentStateChannels } from "./helper";
+
 
 export const createSupervisor = async (llm: ChatOpenAI, options: string[]) => {
   // prompt template
-  const prompt = ChatPromptTemplate.fromMessages([
+  let prompt = ChatPromptTemplate.fromMessages([
     [
       "system",
       `Given the conversation above, should the answer need to be reiterated to the agents to get improved answer or should it be passed to user?
@@ -21,29 +21,16 @@ export const createSupervisor = async (llm: ChatOpenAI, options: string[]) => {
   ]);
 
   // pass options info
-  const formattedPrompt = await prompt.partial({
+  prompt = await prompt.partial({
     options: options.join(", "),
   });
 
-  const chain = formattedPrompt.pipe(llm);
+  const outputSchema = z.object({
+    next: z.string().describe("The selected answer from the options"),
+  });
 
-  const node = (state: AgentStateChannels, config?: RunnableConfig) =>
-    supervisorNode({ state, chain, name: "supervisor", config });
+  const chain = prompt.pipe(llm.withStructuredOutput(outputSchema));
 
-  return node;
+  return chain;
 };
 
-const supervisorNode = async (props: {
-  state: AgentStateChannels;
-  chain: Runnable;
-  name: string;
-  config?: RunnableConfig;
-}) => {
-  const { state, config, chain, name } = props;
-
-  const res = await chain.invoke(state, config);
-// condition for user should act next or agent
-  return {
-    next: res.content,
-  };
-};
